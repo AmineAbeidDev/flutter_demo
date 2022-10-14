@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:notes/constants/routes.dart';
+import '../utilities/show_error_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:notes/views/register_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -34,7 +35,7 @@ class _LoginViewState extends State<LoginView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
-        ),
+      ),
       body: (Column(
         children: [
           TextField(
@@ -60,15 +61,42 @@ class _LoginViewState extends State<LoginView> {
                 try {
                   await FirebaseAuth.instance.signInWithEmailAndPassword(
                       email: _email.text, password: _password.text); //!
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    notesRoute,
+                    (route) => false,
+                  );
                 } on FirebaseAuthException catch (e) {
-                  if (e.code == 'user-not-found') print('user not found');
+                  if (e.code == 'user-not-found') {
+                    //! try an algorithm for this
+                    await showErrorDialog(
+                      context,
+                      'User not found',
+                    );
+                  } else if (e.code == 'wrong-password') {
+                    await showErrorDialog(
+                      context,
+                      'Wrong password',
+                    );
+                  } else {
+                    await showErrorDialog(
+                      context,
+                      'Error: ${e.code}',
+                    );
+                  }
+                } catch (e) {
+                  await showErrorDialog(
+                    context,
+                    'Error: ${e.toString()}',
+                  );
                 }
               },
               child: const Text('Login')),
           TextButton(
               onPressed: () {
-                Navigator.of(context)
-                    .pushNamedAndRemoveUntil('/register/', (route) => false);
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  registerRoute,
+                  (route) => false,
+                ); // pushes a route on the screen and removes everything behind and that what false means
               },
               child: const Text('Not registered yet? Register now!'))
         ],
