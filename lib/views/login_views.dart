@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:notes/services/auth/auth_exceptions.dart';
+import 'package:notes/utilities/show_error_dialog.dart';
+import 'package:notes/services/auth/auth_service.dart';
 import 'package:notes/constants/routes.dart';
-import '../utilities/show_error_dialog.dart';
 import 'package:flutter/material.dart';
 
 class LoginView extends StatefulWidget {
@@ -13,14 +14,14 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   late final TextEditingController _email;
   late final TextEditingController
-      _password; // text controller in which the textfield writes its data and its a pipe between the textfield and the button
+      _password;// text controller in which the textfield writes its data and its a pipe between the textfield and the button
 
   @override
   void initState() {
     //flutter calls it when you create your home page
-    super.initState();
     _email = TextEditingController();
     _password = TextEditingController();
+    super.initState();
   } //to create all your variables once
 
   @override
@@ -59,34 +60,33 @@ class _LoginViewState extends State<LoginView> {
           TextButton(
               onPressed: () async {
                 try {
-                  await FirebaseAuth.instance.signInWithEmailAndPassword(
-                      email: _email.text, password: _password.text); //!
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    notesRoute,
-                    (route) => false,
+                  await AuthService.firebase().logIn(
+                    email: _email.text,
+                    password: _password.text,
                   );
-                } on FirebaseAuthException catch (e) {
-                  if (e.code == 'user-not-found') {
-                    //! try an algorithm for this
-                    await showErrorDialog(
-                      context,
-                      'User not found',
-                    );
-                  } else if (e.code == 'wrong-password') {
-                    await showErrorDialog(
-                      context,
-                      'Wrong password',
+                  if (AuthService.firebase().currentUser?.isEmailVerified ??
+                      false) {
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      notesRoute,
+                      (route) => false,
                     );
                   } else {
-                    await showErrorDialog(
-                      context,
-                      'Error: ${e.code}',
-                    );
+                    Navigator.of(context).pushNamed(verifyEmailRoute);
                   }
-                } catch (e) {
+                } on UserNotFoundAuthException {
                   await showErrorDialog(
                     context,
-                    'Error: ${e.toString()}',
+                    'User not found',
+                  );
+                } on WrongPasswordAuthException {
+                  await showErrorDialog(
+                    context,
+                    'Wrong password',
+                  );
+                } on GenericAuthException {
+                  await showErrorDialog(
+                    context,
+                    'Authentication error',
                   );
                 }
               },
