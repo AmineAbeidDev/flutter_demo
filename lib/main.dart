@@ -1,14 +1,16 @@
 import 'package:notes/services/auth/auth_service.dart';
+import 'package:notes/views/notes/new_note_view.dart';
 import 'package:notes/views/verify_email_view.dart';
+import 'package:notes/views/notes/notes_view.dart';
 import 'package:notes/views/register_view.dart';
 import 'package:notes/views/login_views.dart';
 import 'package:notes/constants/routes.dart';
-import 'package:notes/views/notes_view.dart';
 import 'package:flutter/material.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); //?
   runApp(
+    //! Runs the root widget
     MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
@@ -19,6 +21,7 @@ void main() {
         // A map of strings, funcs
         loginRoute: (context) => const LoginView(), // Named routes
         notesRoute: (context) => const NotesView(),
+        newNoteRoute: (context) => const NewNoteView(),
         registerRoute: (context) => const RegisterView(),
         verifyEmailRoute: (context) => const RegisterView(),
       },

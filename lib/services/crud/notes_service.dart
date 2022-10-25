@@ -6,24 +6,49 @@ import 'package:path/path.dart' show join;
 import 'dart:async';
 
 class NotesService {
-  Database? _db;
-  
+  Database? _db; //* creates an sqlite database
+
   List<DatabaseNotes> _notes = [];
 
-  static final NotesService _shared = NotesService._sharedInstance();//? singleton ~ private
-  NotesService._sharedInstance();//? singleton ~ private constructor ~ private
-  factory NotesService() => _shared;//? singleton ~ public
+  //************ SINGLETON ************//
+  static final NotesService _shared = NotesService
+      ._sharedInstance(); //*creates a static object (initialized only once)
+  NotesService._sharedInstance() {
+    //*private named constructor
+    _notesStreamController = StreamController<List<DatabaseNotes>>.broadcast(
+      //* Creates a stream controller
+      onListen: () {
+        //gets called whenever a new listener subs to the strmCtrl's stream
+        _notesStreamController.sink.add(_notes);
+      },
+    );
+  }
+  /*  STREAMS ~ BROADCAST
+  *   .broadcast() is a stream controller which allows to listen
+  *   to a stream more than once by many listeners, each listeners
+  *   actions are limited to him and do not affect other listeners
+  *   or the stream as a whole.
+  ?   by Listener i mean widget */
 
-  final _notesStreamController =
-      StreamController<List<DatabaseNotes>>.broadcast();
+  factory NotesService() => _shared;
+  /*  SINGLETON
+  *   now only one instance of the NotesService is gonna be
+  *   created and shared whenever you you create a new pbject
+  *   with NotesService(). */
+
+  /*  STREAMS
+  *   Streams are a flow of various types of data event waiting
+  *   for listeners to grab it. Streams can also send errors in
+  *   addition of data. */
+  late final StreamController<List<DatabaseNotes>> _notesStreamController;
 
   Stream<List<DatabaseNotes>> get allNotes => _notesStreamController.stream;
 
 //! ********** NOTE ********** !//
   Future<void> _cacheNotes() async {
     final allNotes = await getAllNotes();
-    _notes = allNotes.toList();
-    _notesStreamController.add(_notes);
+    _notes = allNotes.toList(); //* adds notes to the local list/storage
+    _notesStreamController.add(_notes); //* sends an event to the stream
   }
 
   Future<DatabaseNotes> updateNote({
@@ -36,6 +61,7 @@ class NotesService {
     //Make sure note exists
     await getNote(id: note.id);
 
+    //* Updates the DB
     final updateCount = await db.update(noteTable, {
       textColumn: text,
       isSyncedWithCloudColumn: false,
@@ -44,9 +70,11 @@ class NotesService {
     if (updateCount == 0) {
       throw CouldNotUpdateNoteException();
     } else {
+      //* Updates the list
       final updatedNote = await getNote(id: note.id);
       _notes.removeWhere((note) => note.id == updatedNote.id);
       _notes.add(updatedNote);
+      //* Updates the stream
       _notesStreamController.add(_notes);
       return (updatedNote);
     }
@@ -57,6 +85,7 @@ class NotesService {
     final db = _getDatabaseOrThrow();
     final notes = await db.query(noteTable);
 
+    //* Creates a map out of the list and returns an iterable of notesDb
     return (notes.map((noteRow) => DatabaseNotes.fromRow(noteRow)));
   }
 
@@ -157,7 +186,7 @@ class NotesService {
     );
 
     if (results.isEmpty) {
-      throw (CouldNotDelUsrException());
+      throw (CouldNotFindUsrException());
     } else {
       return DatabaseUser.fromRow(results.first);
     }
@@ -225,11 +254,13 @@ class NotesService {
     if (_db != null) throw DbAlreadyOpenException();
 
     try {
+      //* creates a splite Database in the dir hiarchy then opens it
       final docsPath = await getApplicationDocumentsDirectory();
       final dbPath = join(docsPath.path, dbName);
       final db = await openDatabase(dbPath);
       _db = db;
 
+      //* executes the sqlite code to creates the user & notes tables
       await db.execute(createUserTable);
       await db.execute(createNoteTable);
       await _cacheNotes();
@@ -262,8 +293,8 @@ class DatabaseUser {
   @override
   int get hashCode => id.hashCode;
 
-  //covarianrt changes the behavior of the input parameter so they
-  //do not conform to the signature of that paramter in the superclass
+  // covariant changes the behavior of the input parameter so they
+  // do not conform to the signature of that parameter in the superclass
 }
 
 class DatabaseNotes {
