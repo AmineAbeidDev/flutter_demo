@@ -1,22 +1,26 @@
-import 'package:notes/services/crud/notes_service.dart';
+import 'package:notes/utilities/dialogs/cannot_share_empty_note_dialog.dart';
+import 'package:notes/services/cloud/firebase_cloud_storage.dart';
+import 'package:notes/utilities/generics/get_arguments.dart';
 import 'package:notes/services/auth/auth_service.dart';
+import 'package:notes/services/cloud/cloud_note.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
 
-class NewNoteView extends StatefulWidget {
-  const NewNoteView({super.key});
+class CreateUpdateNoteView extends StatefulWidget {
+  const CreateUpdateNoteView({super.key});
 
   @override
-  State<NewNoteView> createState() => _NewNoteViewState();
+  State<CreateUpdateNoteView> createState() => _CreateUpdateNoteViewState();
 }
 
-class _NewNoteViewState extends State<NewNoteView> {
-  DatabaseNotes? _note;
-  late final NotesService _noteService;
+class _CreateUpdateNoteViewState extends State<CreateUpdateNoteView> {
+  CloudNote? _note;
+  late final FirebaseCloudStorage _noteService;
   late final TextEditingController _textController;
 
   @override
   void initState() {
-    _noteService = NotesService();
+    _noteService = FirebaseCloudStorage();
     _textController = TextEditingController();
     super.initState();
   }
@@ -29,7 +33,7 @@ class _NewNoteViewState extends State<NewNoteView> {
     }
     final text = _textController.text;
     await _noteService.updateNote(
-      note: note,
+      documentId: note.documentId,
       text: text,
     );
   }
@@ -39,21 +43,30 @@ class _NewNoteViewState extends State<NewNoteView> {
     _textController.addListener(_textControllerListener);
   }
 
-  Future<DatabaseNotes> createNewNote() async {
+  Future<CloudNote> createOrGetExistingNote(BuildContext context) async {
+    final widgetNote = context.getArgument<CloudNote>();
+
+    if (widgetNote != null) {
+      _note = widgetNote;
+      _textController.text = widgetNote.text;
+      return widgetNote;
+    }
+
     final existingNote = _note;
     if (existingNote != null) {
       return existingNote;
     }
     final currentUser = AuthService.firebase().currentUser!;
-    final email = currentUser.email!;
-    final owner = await _noteService.getUser(email: email);
-    return await _noteService.createNote(owner: owner);
+    final userId = currentUser.id;
+    final newNote = await _noteService.createNewNotes(ownerUserId: userId);
+    _note = newNote;
+    return newNote;
   }
 
   void _deleteNotesIfTextIsEmpty() {
     final note = _note;
     if (_textController.text.isEmpty && note != null) {
-      _noteService.deleteNote(id: note.id);
+      _noteService.deleteNote(documentId: note.documentId);
     }
   }
 
@@ -61,10 +74,7 @@ class _NewNoteViewState extends State<NewNoteView> {
     final note = _note;
     final text = _textController.text;
     if (note != null && text.isNotEmpty) {
-      await _noteService.updateNote(
-        note: note,
-        text: text,
-      );
+      await _noteService.updateNote(documentId: note.documentId, text: text);
     }
   }
 
@@ -82,13 +92,25 @@ class _NewNoteViewState extends State<NewNoteView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('New Note'),
+        actions: [
+          IconButton(
+            onPressed: (() async {
+              final text = _textController.text;
+              if (_note == null || text.isEmpty) {
+                await showCannotShareEmptyNoteDialog(context);
+              } else {
+                Share.share(text);
+              }
+            }),
+            icon: const Icon(Icons.share),
+          )
+        ],
       ),
       body: FutureBuilder(
-        future: createNewNote(),
+        future: createOrGetExistingNote(context),
         builder: (context, snapshot) {
           switch (snapshot.connectionState) {
             case ConnectionState.done:
-              _note = snapshot.data as DatabaseNotes;
               _setupTextControllerListener();
               return TextField(
                 controller:

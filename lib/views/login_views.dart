@@ -1,6 +1,8 @@
+import 'package:notes/services/auth/bloc/auth_event.dart';
+import 'package:notes/utilities/dialogs/error_dialog.dart';
 import 'package:notes/services/auth/auth_exceptions.dart';
-import 'package:notes/utilities/show_error_dialog.dart';
-import 'package:notes/services/auth/auth_service.dart';
+import 'package:notes/services/auth/bloc/auth_bloc.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:notes/constants/routes.dart';
 import 'package:flutter/material.dart';
 
@@ -14,7 +16,7 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   late final TextEditingController _email;
   late final TextEditingController
-      _password;// text controller in which the textfield writes its data and its a pipe between the textfield and the button
+      _password; // text controller in which the textfield writes its data and its a pipe between the textfield and the button
 
   @override
   void initState() {
@@ -58,21 +60,13 @@ class _LoginViewState extends State<LoginView> {
             ),
           ),
           TextButton(
-              onPressed: () async {
+              onPressed: () async { 
+                final email = _email.text;
+                final password = _password.text;
                 try {
-                  await AuthService.firebase().logIn(
-                    email: _email.text,
-                    password: _password.text,
-                  );
-                  if (AuthService.firebase().currentUser?.isEmailVerified ??
-                      false) {
-                    Navigator.of(context).pushNamedAndRemoveUntil(
-                      notesRoute,
-                      (route) => false,
-                    );
-                  } else {
-                    Navigator.of(context).pushNamed(verifyEmailRoute);
-                  }
+                  context.read<AuthBloc>().add(
+                        AuthEventLogIn(email, password),
+                      );
                 } on UserNotFoundAuthException {
                   await showErrorDialog(
                     context,
