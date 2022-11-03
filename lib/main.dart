@@ -29,10 +29,6 @@ void main() {
       ),
       routes: {
         // A map of strings, funcs
-        loginRoute: (context) => const LoginView(), // Named routes
-        notesRoute: (context) => const NotesView(),
-        registerRoute: (context) => const RegisterView(),
-        verifyEmailRoute: (context) => const RegisterView(),
         createOrUpdateNoteRoute: (context) => const CreateUpdateNoteView(),
       },
     ),
@@ -55,6 +51,8 @@ class HomePage extends StatelessWidget {
           return const VerifyEmailView();
         } else if (state is AuthStateLoggedOut) {
           return const LoginView();
+        } else if (state is AuthStateRegistering) {
+          return const RegisterView();
         } else {
           return (const Scaffold(
             body: CircularProgressIndicator(),
@@ -63,27 +61,27 @@ class HomePage extends StatelessWidget {
       },
     ));
 
-  //   return FutureBuilder(
-  //     //return an async Future
-  //     future: AuthService.firebase().initialize(),
-  //     builder: (context, snapshot) {
-  //       switch (snapshot.connectionState) {
-  //         case ConnectionState.done:
-  //           final user = AuthService.firebase().currentUser;
-  //           if (user != null) {
-  //             // if there is a user
-  //             if (user.isEmailVerified) {
-  //               return const NotesView(); // if verified
-  //             } else {
-  //               return const VerifyEmailView(); //if not verified
-  //             }
-  //           } else {
-  //             return const LoginView(); // if there is no user
-  //           }
-  //         default:
-  //           return const CircularProgressIndicator();
-  //       }
-  //     },
-  //   );
+    //   return FutureBuilder(
+    //     //return an async Future
+    //     future: AuthService.firebase().initialize(),
+    //     builder: (context, snapshot) {
+    //       switch (snapshot.connectionState) {
+    //         case ConnectionState.done:
+    //           final user = AuthService.firebase().currentUser;
+    //           if (user != null) {
+    //             // if there is a user
+    //             if (user.isEmailVerified) {
+    //               return const NotesView(); // if verified
+    //             } else {
+    //               return const VerifyEmailView(); //if not verified
+    //             }
+    //           } else {
+    //             return const LoginView(); // if there is no user
+    //           }
+    //         default:
+    //           return const CircularProgressIndicator();
+    //       }
+    //     },
+    //   );
   }
 }
