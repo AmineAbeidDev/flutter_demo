@@ -1,8 +1,10 @@
 import 'package:notes/services/auth/firebase_auth_provider.dart';
 import 'package:notes/views/notes/create_update_note_view.dart';
+import 'package:notes/helpers/loading/loading_screen.dart';
 import 'package:notes/services/auth/bloc/auth_event.dart';
 import 'package:notes/services/auth/bloc/auth_state.dart';
 import 'package:notes/services/auth/bloc/auth_bloc.dart';
+import 'package:notes/views/forgot_password_view.dart';
 import 'package:notes/views/verify_email_view.dart';
 import 'package:notes/views/notes/notes_view.dart';
 import 'package:notes/views/register_view.dart';
@@ -11,6 +13,7 @@ import 'package:notes/views/login_views.dart';
 import 'package:notes/constants/routes.dart';
 import 'package:flutter/material.dart';
 
+//! if you wanna use something independent from the navigation stack and on the top of it you should use overlays
 void main() {
   WidgetsFlutterBinding.ensureInitialized(); //?
   runApp(
@@ -25,7 +28,7 @@ void main() {
         create: (context) => AuthBloc(FirebaseAuthProvider()),
         //! Creates the bloc (will only get called when the instance is accessed)
         child: const HomePage(),
-        //! Child has access to the bloc's intances via BlocProvider.of(context)
+        //! Child has access to all the intances of BLoC
       ),
       routes: {
         // A map of strings, funcs
@@ -40,10 +43,21 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    //! put read and then specifiy where to read from
+    //! reads from AuthBloc
     //! then add to notify bloc of new event
     context.read<AuthBloc>().add(const AuthEventInitialize());
-    return (BlocBuilder<AuthBloc, AuthState>(
+    //! Builds new widget according to state type changes
+    return (BlocConsumer<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state.isLoading) {
+          LoadingScreen().show(
+            context: context,
+            text: state.loadingText ?? 'Please wait a moment',
+          );
+        } else {
+          LoadingScreen().hide();
+        }
+      },
       builder: (context, state) {
         if (state is AuthStateLoggedIn) {
           return const NotesView();
@@ -53,6 +67,8 @@ class HomePage extends StatelessWidget {
           return const LoginView();
         } else if (state is AuthStateRegistering) {
           return const RegisterView();
+        } else if (state is AuthStateForgotPassword) {
+          return const ForgotPasswordView();
         } else {
           return (const Scaffold(
             body: CircularProgressIndicator(),
@@ -60,28 +76,5 @@ class HomePage extends StatelessWidget {
         }
       },
     ));
-
-    //   return FutureBuilder(
-    //     //return an async Future
-    //     future: AuthService.firebase().initialize(),
-    //     builder: (context, snapshot) {
-    //       switch (snapshot.connectionState) {
-    //         case ConnectionState.done:
-    //           final user = AuthService.firebase().currentUser;
-    //           if (user != null) {
-    //             // if there is a user
-    //             if (user.isEmailVerified) {
-    //               return const NotesView(); // if verified
-    //             } else {
-    //               return const VerifyEmailView(); //if not verified
-    //             }
-    //           } else {
-    //             return const LoginView(); // if there is no user
-    //           }
-    //         default:
-    //           return const CircularProgressIndicator();
-    //       }
-    //     },
-    //   );
   }
 }

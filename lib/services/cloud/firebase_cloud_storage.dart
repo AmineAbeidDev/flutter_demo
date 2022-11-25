@@ -23,34 +23,37 @@ class FirebaseCloudStorage {
         documentId: fetchedNote.id, ownerUserId: ownerUserId, text: '');
   }
 
-  Future<Iterable<CloudNote>> getNotes({required String ownerUserId}) async {
-    try {
-      return await notes
-          .where(
-            ownerUserIdFieldName,
-            isEqualTo: ownerUserId,
-          )
-          .get()
-          .then(
-            (value) => value.docs.map((doc) => CloudNote.fromSnapShot(doc)),
-          );
-      //! Where returns the query, and you need to execute it by
-      //! invoking get(); to return a querySnapshot with all the
-      //! objects from firestore.
-      //! then() allows you to return a synchronys data or a future
-    } catch (e) {
-      throw CouldNotGetAllNotesException();
-    }
-  }
+  // Future<Iterable<CloudNote>> getNotes({required String ownerUserId}) async {
+  //   try {
+  //     return await notes
+  //         .where(
+  //           ownerUserIdFieldName,
+  //           isEqualTo: ownerUserId,
+  //         )
+  //         .get()
+  //         .then(
+  //           (value) => value.docs.map((doc) => CloudNote.fromSnapShot(doc)),
+  //         );
+  //     //! Where returns the query, and you need to execute it by
+  //     //! invoking get(); to return a querySnapshot with all the
+  //     //! objects from firestore.
+  //     //! then() allows you to return a synchronys data or a future
+  //   } catch (e) {
+  //     throw CouldNotGetAllNotesException();
+  //   }
+  // }
 
   //! Snapshot gets a collection with the latest update
 
   //! First we're mapping the docs in snapshot to a cloudNote
-  //! object, then we get the docs of the userId only
-  Stream<Iterable<CloudNote>> allNotes({required String ownerUserId}) =>
-      notes.snapshots().map((event) => event.docs
-          .map((doc) => CloudNote.fromSnapShot(doc))
-          .where((note) => note.ownerUserId == ownerUserId));
+  //! object, then we get the docs of the userId only 
+  Stream<Iterable<CloudNote>> allNotes({required String ownerUserId}) {
+    final allNotes = notes
+        .where(ownerUserIdFieldName, isEqualTo: ownerUserId)
+        .snapshots()
+        .map((event) => event.docs.map((doc) => CloudNote.fromSnapShot(doc)));
+    return allNotes;
+  }
 
   Future<void> updateNote({
     required String documentId,

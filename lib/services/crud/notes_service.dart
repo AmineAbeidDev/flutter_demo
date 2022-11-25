@@ -7,13 +7,13 @@
 // import 'dart:async';
 
 // class NotesService {
-//   Database? _db; //* creates an sqlite database
+//    Database? _db; //* creates an sqlite database
 
-//   List<DatabaseNotes> _notes = [];
+//    List<DatabaseNotes> _notes = [];
 
-//   DatabaseUser? _user;
+//    DatabaseUser? _user;
 
-//   //************ SINGLETON ************//
+//    //************ SINGLETON ************//
 //   static final NotesService _shared = NotesService
 //       ._sharedInstance(); //*creates a static object (initialized only once)
 //   NotesService._sharedInstance() {
@@ -30,8 +30,8 @@
 //   *   .broadcast() is a stream controller which allows to listen
 //   *   to a stream more than once by many listeners, each listeners
 //   *   actions are limited to him and do not affect other listeners
-//   *   or the stream as a whole.
-//   ?   by Listener i mean widget */
+// //   *   or the stream as a whole.
+// //   ?   by Listener i mean widget */
 
 //   factory NotesService() => _shared;
 //   /*  SINGLETON
